@@ -1,7 +1,15 @@
 from langchain_anthropic import ChatAnthropic
-import json
+from dotenv import load_dotenv
+import json, os, re, sys
 
-llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2)
+load_dotenv()
+
+# Initialize Claude (use the latest valid model)
+llm = ChatAnthropic(
+    model="claude-sonnet-4-5-20250929",  
+    temperature=0.2,
+    api_key=os.getenv("ANTHROPIC_API_KEY")
+)
 
 def run_pm_agent(project_text: str):
     prompt = f"""
@@ -23,10 +31,33 @@ Return STRICT JSON in the format:
 Project Brief:
 \"\"\"{project_text}\"\"\"
 """
-    result = llm.predict(prompt)
+
+    response = llm.invoke(prompt)
+    result = response.content if hasattr(response, "content") else str(response)
+
+    # 🧹 Clean & extract JSON safely
+    # 1. Remove markdown code fences
+    text = re.sub(r"```(?:json)?|```", "", result)
+    # 2. Extract first valid JSON object in case of extra text
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        print("Claude returned no JSON. Raw output:\n", result)
+        sys.exit(1)
+
+    cleaned = match.group(0)
     try:
-        data = json.loads(result)
-    except json.JSONDecodeError:
-        print("Claude returned invalid JSON. Result:", result)
-        raise
+        data = json.loads(cleaned)
+    except json.JSONDecodeError as e:
+        print("Invalid JSON. Raw:\n", cleaned)
+        print("Error:", e)
+        sys.exit(1)
+
     return data
+
+# if __name__ == "__main__":
+#     text = """
+#     Build a web platform that helps students collaborate on projects.
+#     It should analyze uploaded PDFs and generate tasks and roles automatically.
+#     """
+#     result = run_pm_agent(text)
+#     print(json.dumps(result, indent=2))
