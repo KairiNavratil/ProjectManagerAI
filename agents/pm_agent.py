@@ -1,4 +1,4 @@
-from langchain.chat_models import ChatAnthropic
+from langchain_anthropic import ChatAnthropic
 import json
 
 llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2)
