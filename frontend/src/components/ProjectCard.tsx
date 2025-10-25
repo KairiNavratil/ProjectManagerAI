@@ -5,13 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 
 interface Project {
+  // id: string;
   id: string;
   name: string;
   description: string;
   progress: number;
   teamSize: number;
-  dueDate: string;
-  status: "in-progress" | "completed" | "planning";
+  // dueDate: string;
+  // status: "in-progress" | "completed" | "planning";
 }
 
 interface ProjectCardProps {
@@ -26,6 +27,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
   };
 
   return (
+    // to={`/project/${project.id}`}
     <Link to={`/project/${project.id}`}>
       <Card className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border-border">
         <CardHeader>
@@ -33,10 +35,10 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
             <CardTitle className="text-xl group-hover:text-accent transition-colors">
               {project.name}
             </CardTitle>
-            <Badge className={statusColors[project.status]}>
+            {/* <Badge className={statusColors[project.status]}>
               {project.status === "in-progress" ? "In Progress" : 
                project.status === "completed" ? "Completed" : "Planning"}
-            </Badge>
+            </Badge> */}
           </div>
           <p className="text-sm text-muted-foreground line-clamp-2">
             {project.description}
@@ -57,10 +59,10 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
               <Users className="mr-2 h-4 w-4" />
               <span>{project.teamSize} members</span>
             </div>
-            <div className="flex items-center text-muted-foreground">
+            {/* <div className="flex items-center text-muted-foreground">
               <Calendar className="mr-2 h-4 w-4" />
               <span>{new Date(project.dueDate).toLocaleDateString()}</span>
-            </div>
+            </div> */}
           </div>
 
           <div className="pt-2 border-t border-border">
