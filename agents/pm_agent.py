@@ -16,14 +16,12 @@ def run_pm_agent(project_text: str):
 You are an expert project manager.
 Analyze the following project brief and produce:
 
-- 3–5 key roles (e.g., Backend Developer, UI/UX Designer, Project Lead)
-- 5–10 high-level tasks (each with a short description)
+- 5 high-level tasks (each with a short description and the most suited role)
 
 Return STRICT JSON in the format:
 {{
-  "roles": ["role1", "role2"],
   "tasks": [
-    {{"title": "task title", "description": "short summary"}},
+    {{"title": "task title", "description": "short summary", "role": "Role Name"}},
     ...
   ]
 }}

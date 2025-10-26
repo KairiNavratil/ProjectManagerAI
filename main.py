@@ -15,17 +15,16 @@ async def upload_project(project_id: str, file: UploadFile = File(...)):
     n_chunks = create_memory_collection(project_id, text)
 
     data = run_pm_agent(text)
-    unique_roles = set(data["roles"])  
-    for role in unique_roles:
-        supabase.table("roles").insert({"project_id": project_id, "name": role}).execute()
-    for task in data["tasks"]:
+    for index, task in enumerate(data["tasks"]):
         supabase.table("Tasks").insert({
+            "role": task["role"],
             "project_id": project_id,
             "title": task["title"],
-            "description": task["description"]
+            "description": task["description"],
+            "status": "todo",
         }).execute()
 
-    return {"roles": data["roles"], "tasks": data["tasks"], "memory_chunks": n_chunks}
+    return {"tasks": data["tasks"], "memory_chunks": n_chunks}
 
 @app.post("/specialize_task")
 async def specialize_task(

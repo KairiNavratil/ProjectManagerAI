@@ -2,3 +2,5 @@
 venv/
 pyvenv.cfg
 __pycache__/
+chroma_store/
+.env
