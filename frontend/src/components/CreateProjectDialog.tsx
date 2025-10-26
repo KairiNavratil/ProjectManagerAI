@@ -21,7 +21,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import FileUpload from "./FileUpload";
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -40,6 +39,8 @@ export const CreateProjectDialog = ({
   >([]);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -65,6 +66,12 @@ export const CreateProjectDialog = ({
     setTeamMembers(teamMembers.filter((_, i) => i !== index));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
   const handleCreate = async () => {
     if (!name || !description) {
       toast({
@@ -77,21 +84,77 @@ export const CreateProjectDialog = ({
 
     setIsGenerating(true);
 
-    // Simulate AI processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // 1️⃣ Create the project
+      const createProjectRes = await fetch(
+        `https://ybxymtsxfobgxnqskxok.supabase.co/functions/v1/addProject`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            name,
+            description,
+            progress: 0,
+            teamSize: teamMembers.length,
+          }),
+        }
+      );
 
-    toast({
-      title: "Project created! 🎉",
-      description:
-        "AI has generated your roadmap and assigned tasks to team members",
-    });
+      if (!createProjectRes.ok) throw new Error("Failed to create project");
 
-    setIsGenerating(false);
-    onOpenChange(false);
+      // 2️⃣ Get the project ID
+      const getProjectRes = await fetch(
+        `https://ybxymtsxfobgxnqskxok.supabase.co/functions/v1/getProjectId?name=${name}`,
+        {
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+        }
+      );
 
-    // Navigate to the new project (mock ID)
+      if (!getProjectRes.ok) throw new Error("Failed to get project ID");
 
-    navigate("/project/new");
+      const projectData = await getProjectRes.json();
+      const projectId = projectData.id;
+
+      if (!projectId) throw new Error("Project ID not found");
+
+      // 3️⃣ Upload the file if one exists
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadRes = await fetch(
+          `http://127.0.0.1:8000/upload_project?project_id=${projectId}`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!uploadRes.ok) throw new Error("File upload failed");
+      }
+
+      toast({
+        title: "Project created! 🎉",
+        description:
+          "AI has generated your roadmap and assigned tasks to team members",
+      });
+
+      onOpenChange(false);
+      navigate(`/project/${projectId}`);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -131,14 +194,10 @@ export const CreateProjectDialog = ({
               disabled={isGenerating}
             />
 
-            <FileUpload
-              // projectId="d734bd3b-7577-4a59-80be-97f57b42af90"
-              uploadUrl={"http://127.0.0.1:8000/upload_project"}
-              projectName={name}
-              description={description}
-              progress={0}
-              teamSize={teamMembers.length}
-            />
+            <div>
+              <Label>Upload File (optional)</Label>
+              <Input type="file" onChange={handleFileChange} disabled={isGenerating} />
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -147,11 +206,7 @@ export const CreateProjectDialog = ({
             {teamMembers.length > 0 && (
               <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg">
                 {teamMembers.map((member, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="px-3 py-1.5"
-                  >
+                  <Badge key={index} variant="secondary" className="px-3 py-1.5">
                     {member.name} - {member.role}
                     <button
                       onClick={() => removeMember(index)}
@@ -205,16 +260,12 @@ export const CreateProjectDialog = ({
             <div className="bg-gradient-accent rounded-lg p-4 space-y-3">
               <div className="flex items-center text-accent">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                <span className="font-medium">
-                  AI is working on your project...
-                </span>
+                <span className="font-medium">AI is working on your project...</span>
               </div>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>✓ Analyzing project requirements</p>
                 <p>✓ Generating roadmap and milestones</p>
-                <p className="animate-pulse">
-                  → Breaking down tasks and assigning roles...
-                </p>
+                <p className="animate-pulse">→ Breaking down tasks and assigning roles...</p>
               </div>
             </div>
           )}
