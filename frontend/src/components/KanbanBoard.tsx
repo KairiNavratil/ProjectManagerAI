@@ -84,9 +84,9 @@ export const KanbanBoard = ({ id }: KanbanBoardProps) => {
     ...col,
     tasks: tasks
       .filter((t) => t.status === col.id) // <-- filter by status
-      // .filter((t) =>
-      //   selectedRoles === "all" ? true : t.role === setSelectedRoles
-      // ), // optional filter
+      .filter((t) =>
+        selectedRoles === "all" ? true : t.role === selectedRoles
+      ), // optional filter
   }));
 
   console.log(filteredColumns[0]);

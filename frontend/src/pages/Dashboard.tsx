@@ -42,6 +42,23 @@ const Dashboard = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const updateProjects = async () => {
+    try {
+      const resUpdate = await fetch(
+        "https://ybxymtsxfobgxnqskxok.supabase.co/functions/v1/updatedProjects",
+        {
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+        }
+      );
+
+      if (!resUpdate.ok) throw new Error("Failed to update projects");
+    } catch (error) {
+      console.error("Error updating projects:", error);
+    }
+  };
+
   const fetchProjects = async () => {
     try {
       const res = await fetch(
@@ -57,7 +74,6 @@ const Dashboard = () => {
 
       const data = await res.json();
       setProjects(data.data || []);
-      console.log("Projects fetched:", projects);
     } catch (error) {
       console.error("Error fetching projects:", error);
     } finally {
@@ -66,21 +82,21 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchProjects();
+    const init = async () => {
+      await updateProjects();
+      await fetchProjects();
+    };
+    init();
 
     const channel = supabase
       .channel("public:Projects")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "Projects" },
-        (payload) => {
-          console.log("Realtime change:", payload);
-          fetchProjects(); // refresh list when changes happen
-        }
+        fetchProjects
       )
       .subscribe();
 
-    // Cleanup on unmount
     return () => {
       supabase.removeChannel(channel);
     };
