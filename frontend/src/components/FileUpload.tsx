@@ -117,7 +117,7 @@ export default function FileUpload({
 
       <button
         onClick={handleUpload}
-        disabled={!file || !projectName || !description || !progress || !teamSize}
+        disabled={!file}
         className={`w-full py-2 px-4 rounded-lg font-semibold text-white ${
           file 
             ? "bg-blue-600 hover:bg-blue-700"
