@@ -30,32 +30,30 @@ Project Brief:
 \"\"\"{project_text}\"\"\"
 """
 
-    response = llm.invoke(prompt)
-    result = response.content if hasattr(response, "content") else str(response)
-
-    # 🧹 Clean & extract JSON safely
-    # 1. Remove markdown code fences
-    text = re.sub(r"```(?:json)?|```", "", result)
-    # 2. Extract first valid JSON object in case of extra text
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        print("Claude returned no JSON. Raw output:\n", result)
-        sys.exit(1)
-
-    cleaned = match.group(0)
     try:
+        response = llm.invoke(prompt)
+        result = response.content if hasattr(response, "content") else str(response)
+
+        # 🧹 Clean & extract JSON safely
+        text = re.sub(r"```(?:json)?|```", "", result)
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+
+        if not match:
+            print("Claude returned no JSON. Raw output:\n", result)
+            # 💡 FIX: Raise an error instead of exiting
+            raise ValueError(f"Agent returned no JSON. Raw output: {result}")
+
+        cleaned = match.group(0)
         data = json.loads(cleaned)
+        return data
+
     except json.JSONDecodeError as e:
         print("Invalid JSON. Raw:\n", cleaned)
         print("Error:", e)
-        sys.exit(1)
-
-    return data
-
-# if __name__ == "__main__":
-#     text = """
-#     Build a web platform that helps students collaborate on projects.
-#     It should analyze uploaded PDFs and generate tasks and roles automatically.
-#     """
-#     result = run_pm_agent(text)
-#     print(json.dumps(result, indent=2))
+        # 💡 FIX: Raise an error instead of exiting
+        raise ValueError(f"Agent returned invalid JSON. Raw: {cleaned}")
+    
+    except Exception as e:
+        # Catch any other errors (like API key issues)
+        print(f"Error during agent run: {e}")
+        raise ValueError(f"An unexpected error occurred in the agent: {e}")
