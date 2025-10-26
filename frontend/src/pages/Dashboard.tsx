@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ProjectCard } from "@/components/ProjectCard";
 import { CreateProjectDialog } from "@/components/CreateProjectDialog";
 import { Navbar } from "@/components/Navbar";
+import supabase from "../utils/supabase";
 
 // const mockProjects = [
 //   {
@@ -35,52 +36,71 @@ import { Navbar } from "@/components/Navbar";
 //   },
 // ];
 
-
 const Dashboard = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch(
+        "https://ybxymtsxfobgxnqskxok.supabase.co/functions/v1/getProjects",
+        {
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to fetch projects");
+
+      const data = await res.json();
+      setProjects(data.data || []);
+      console.log("Projects fetched:", projects);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const res = await fetch(
-          "https://ybxymtsxfobgxnqskxok.supabase.co/functions/v1/getProjects",
-          {
-            headers: {
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            },
-          }
-        );
-
-        if (!res.ok) throw new Error("Failed to fetch projects");
-
-        const data = await res.json();
-        setProjects(data.data || []);
-        console.log("Projects fetched:", projects);
-
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProjects();
-  }, []); 
+
+    const channel = supabase
+      .channel("public:Projects")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Projects" },
+        (payload) => {
+          console.log("Realtime change:", payload);
+          fetchProjects(); // refresh list when changes happen
+        }
+      )
+      .subscribe();
+
+    // Cleanup on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <main className="container mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-8 animate-fade-in">
           <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">Projects</h1>
-            <p className="text-muted-foreground">Manage your team projects with AI assistance</p>
+            <h1 className="text-4xl font-bold text-foreground mb-2">
+              Projects
+            </h1>
+            <p className="text-muted-foreground">
+              Manage your team projects with AI assistance
+            </p>
           </div>
-          <Button 
+          <Button
             onClick={() => setIsCreateDialogOpen(true)}
             className="bg-gradient-primary hover:shadow-glow transition-all duration-300"
             size="lg"
@@ -121,9 +141,9 @@ const Dashboard = () => {
         )}
       </main>
 
-      <CreateProjectDialog 
-        open={isCreateDialogOpen} 
-        onOpenChange={setIsCreateDialogOpen} 
+      <CreateProjectDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
       />
     </div>
   );
