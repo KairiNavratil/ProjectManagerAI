@@ -41,7 +41,7 @@ const ProjectDetail = () => {
               </TabsList>
               
               <TabsContent value="board" className="mt-6">
-                <KanbanBoard />
+                <KanbanBoard id={id}/>
               </TabsContent>
               
               <TabsContent value="roadmap" className="mt-6">
