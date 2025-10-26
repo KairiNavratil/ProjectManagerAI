@@ -11,21 +11,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import FileUpload from "./FileUpload";
 
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogProps) => {
+export const CreateProjectDialog = ({
+  open,
+  onOpenChange,
+}: CreateProjectDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [teamMembers, setTeamMembers] = useState<Array<{ name: string; role: string }>>([]);
+  const [teamMembers, setTeamMembers] = useState<
+    Array<{ name: string; role: string }>
+  >([]);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("");
   const { toast } = useToast();
@@ -41,7 +53,10 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
       return;
     }
 
-    setTeamMembers([...teamMembers, { name: newMemberName, role: newMemberRole }]);
+    setTeamMembers([
+      ...teamMembers,
+      { name: newMemberName, role: newMemberRole },
+    ]);
     setNewMemberName("");
     setNewMemberRole("");
   };
@@ -61,19 +76,21 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
     }
 
     setIsGenerating(true);
-    
+
     // Simulate AI processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     toast({
       title: "Project created! 🎉",
-      description: "AI has generated your roadmap and assigned tasks to team members",
+      description:
+        "AI has generated your roadmap and assigned tasks to team members",
     });
-    
+
     setIsGenerating(false);
     onOpenChange(false);
-    
+
     // Navigate to the new project (mock ID)
+
     navigate("/project/new");
   };
 
@@ -86,7 +103,8 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
             Create New Project
           </DialogTitle>
           <DialogDescription>
-            Describe your project and let AI generate a complete roadmap with tasks, roles, and deadlines
+            Describe your project and let AI generate a complete roadmap with
+            tasks, roles, and deadlines
           </DialogDescription>
         </DialogHeader>
 
@@ -112,15 +130,28 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
               onChange={(e) => setDescription(e.target.value)}
               disabled={isGenerating}
             />
+
+            <FileUpload
+              // projectId="d734bd3b-7577-4a59-80be-97f57b42af90"
+              uploadUrl={"http://127.0.0.1:8000/"}
+              projectName={name}
+              description={description}
+              progress={0}
+              teamSize={teamMembers.length}
+            />
           </div>
 
           <div className="space-y-3">
             <Label>Team Members</Label>
-            
+
             {teamMembers.length > 0 && (
               <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg">
                 {teamMembers.map((member, index) => (
-                  <Badge key={index} variant="secondary" className="px-3 py-1.5">
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="px-3 py-1.5"
+                  >
                     {member.name} - {member.role}
                     <button
                       onClick={() => removeMember(index)}
@@ -141,7 +172,11 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
                 onChange={(e) => setNewMemberName(e.target.value)}
                 disabled={isGenerating}
               />
-              <Select value={newMemberRole} onValueChange={setNewMemberRole} disabled={isGenerating}>
+              <Select
+                value={newMemberRole}
+                onValueChange={setNewMemberRole}
+                disabled={isGenerating}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
@@ -154,7 +189,7 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
                 </SelectContent>
               </Select>
             </div>
-            
+
             <Button
               type="button"
               variant="outline"
@@ -170,12 +205,16 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
             <div className="bg-gradient-accent rounded-lg p-4 space-y-3">
               <div className="flex items-center text-accent">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                <span className="font-medium">AI is working on your project...</span>
+                <span className="font-medium">
+                  AI is working on your project...
+                </span>
               </div>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>✓ Analyzing project requirements</p>
                 <p>✓ Generating roadmap and milestones</p>
-                <p className="animate-pulse">→ Breaking down tasks and assigning roles...</p>
+                <p className="animate-pulse">
+                  → Breaking down tasks and assigning roles...
+                </p>
               </div>
             </div>
           )}
