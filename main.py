@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Body
 from dotenv import load_dotenv
 from db.supabase_client import supabase
 from utils.pdf_utils import extract_text_from_pdf
@@ -28,7 +28,11 @@ async def upload_project(project_id: str, file: UploadFile = File(...)):
     return {"roles": data["roles"], "tasks": data["tasks"], "memory_chunks": n_chunks}
 
 @app.post("/specialize_task")
-async def specialize_task(project_id: str, role: str, task_title: str):
+async def specialize_task(
+    project_id: str = Body(...),
+    role: str = Body(...),
+    task_title: str = Body(...)
+):
     subtasks = run_specialist_agent(project_id, role, task_title)
     for st in subtasks:
         supabase.table("subtasks").insert({
