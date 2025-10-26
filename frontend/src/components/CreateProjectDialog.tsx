@@ -133,7 +133,7 @@ export const CreateProjectDialog = ({
 
             <FileUpload
               // projectId="d734bd3b-7577-4a59-80be-97f57b42af90"
-              uploadUrl={"http://127.0.0.1:8000/"}
+              uploadUrl={"http://127.0.0.1:8000/upload_project"}
               projectName={name}
               description={description}
               progress={0}
