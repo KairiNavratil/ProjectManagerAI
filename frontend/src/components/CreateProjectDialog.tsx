@@ -11,7 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -21,13 +27,20 @@ interface CreateProjectDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogProps) => {
+export const CreateProjectDialog = ({
+  open,
+  onOpenChange,
+}: CreateProjectDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [teamMembers, setTeamMembers] = useState<Array<{ name: string; role: string }>>([]);
+  const [teamMembers, setTeamMembers] = useState<
+    Array<{ name: string; role: string }>
+  >([]);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -41,13 +54,22 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
       return;
     }
 
-    setTeamMembers([...teamMembers, { name: newMemberName, role: newMemberRole }]);
+    setTeamMembers([
+      ...teamMembers,
+      { name: newMemberName, role: newMemberRole },
+    ]);
     setNewMemberName("");
     setNewMemberRole("");
   };
 
   const removeMember = (index: number) => {
     setTeamMembers(teamMembers.filter((_, i) => i !== index));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
   };
 
   const handleCreate = async () => {
@@ -61,20 +83,78 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
     }
 
     setIsGenerating(true);
-    
-    // Simulate AI processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    toast({
-      title: "Project created! 🎉",
-      description: "AI has generated your roadmap and assigned tasks to team members",
-    });
-    
-    setIsGenerating(false);
-    onOpenChange(false);
-    
-    // Navigate to the new project (mock ID)
-    navigate("/project/new");
+
+    try {
+      // 1️⃣ Create the project
+      const createProjectRes = await fetch(
+        `https://ybxymtsxfobgxnqskxok.supabase.co/functions/v1/addProject`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            name,
+            description,
+            progress: 0,
+            teamSize: teamMembers.length,
+          }),
+        }
+      );
+
+      if (!createProjectRes.ok) throw new Error("Failed to create project");
+
+      // 2️⃣ Get the project ID
+      const getProjectRes = await fetch(
+        `https://ybxymtsxfobgxnqskxok.supabase.co/functions/v1/getProjectId?name=${name}`,
+        {
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+        }
+      );
+
+      if (!getProjectRes.ok) throw new Error("Failed to get project ID");
+
+      const projectData = await getProjectRes.json();
+      const projectId = projectData.id;
+
+      if (!projectId) throw new Error("Project ID not found");
+
+      // 3️⃣ Upload the file if one exists
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadRes = await fetch(
+          `http://127.0.0.1:8000/upload_project?project_id=${projectId}`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!uploadRes.ok) throw new Error("File upload failed");
+      }
+
+      toast({
+        title: "Project created! 🎉",
+        description:
+          "AI has generated your roadmap and assigned tasks to team members",
+      });
+
+      onOpenChange(false);
+      navigate(`/project/${projectId}`);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -86,7 +166,8 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
             Create New Project
           </DialogTitle>
           <DialogDescription>
-            Describe your project and let AI generate a complete roadmap with tasks, roles, and deadlines
+            Describe your project and let AI generate a complete roadmap with
+            tasks, roles, and deadlines
           </DialogDescription>
         </DialogHeader>
 
@@ -112,11 +193,16 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
               onChange={(e) => setDescription(e.target.value)}
               disabled={isGenerating}
             />
+
+            <div>
+              <Label>Upload File (optional)</Label>
+              <Input type="file" onChange={handleFileChange} disabled={isGenerating} />
+            </div>
           </div>
 
           <div className="space-y-3">
             <Label>Team Members</Label>
-            
+
             {teamMembers.length > 0 && (
               <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg">
                 {teamMembers.map((member, index) => (
@@ -141,7 +227,11 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
                 onChange={(e) => setNewMemberName(e.target.value)}
                 disabled={isGenerating}
               />
-              <Select value={newMemberRole} onValueChange={setNewMemberRole} disabled={isGenerating}>
+              <Select
+                value={newMemberRole}
+                onValueChange={setNewMemberRole}
+                disabled={isGenerating}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
@@ -154,7 +244,7 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
                 </SelectContent>
               </Select>
             </div>
-            
+
             <Button
               type="button"
               variant="outline"
