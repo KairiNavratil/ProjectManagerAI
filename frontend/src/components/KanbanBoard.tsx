@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/select";
 import { CheckCircle2, Circle, Clock, Filter } from "lucide-react";
 import supabase from "../utils/supabase";
+import { X } from "lucide-react";
+
 
 interface KanbanBoardProps {
   id: string;
@@ -33,6 +35,32 @@ export const KanbanBoard = ({ id }: KanbanBoardProps) => {
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleDeleteTask = async (taskId: string) => {
+  if (!confirm("Are you sure you want to delete this task?")) return;
+
+  try {
+    const res = await fetch(
+      "https://ybxymtsxfobgxnqskxok.supabase.co/functions/v1/deleteTask?id=" + taskId,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ id: taskId }),
+      }
+    );
+
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    console.log("🗑️ Task deleted:", data);
+    fetchTasks(); // refresh list
+  } catch (error) {
+    console.error("❌ Error deleting task:", error);
+  }
+};
+
 
   const fetchTasks = async () => {
     try {
@@ -160,40 +188,51 @@ export const KanbanBoard = ({ id }: KanbanBoardProps) => {
                   //   </CardContent>
                   // </Card>
 
-                  <Card
-                    key={task.id}
-                    className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
-                      task.status === "done"
-                        ? "bg-green-50 border-green-200"
-                        : "bg-white border"
-                    }`}
-                  >
-                    <CardHeader className="pb-3">
-                      <CardTitle
-                        className={`text-base ${
-                          task.status === "done"
-                            ? "text-green-800"
-                            : "text-foreground"
-                        }`}
-                      >
-                        {task.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${
-                            task.status === "done"
-                              ? "border-green-300 text-green-700 bg-green-100"
-                              : "border-muted text-muted-foreground bg-background"
-                          }`}
-                        >
-                          {task.role}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
+
+<Card
+  key={task.id}
+  className={`relative cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
+    task.status === "done"
+      ? "bg-green-50 border-green-200"
+      : "bg-white border"
+  }`}
+>
+  {/* 🗑️ Delete button */}
+  <button
+    onClick={(e) => {
+      e.stopPropagation(); // prevent clicking the card
+      handleDeleteTask(task.id);
+    }}
+    className="absolute top-2 right-2 text-muted-foreground hover:text-red-500 transition-colors"
+  >
+    <X className="h-4 w-4" />
+  </button>
+
+  <CardHeader className="pb-3">
+    <CardTitle
+      className={`text-base ${
+        task.status === "done" ? "text-green-800" : "text-foreground"
+      }`}
+    >
+      {task.title}
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-3">
+    <div className="flex items-center justify-between">
+      <Badge
+        variant="outline"
+        className={`text-xs ${
+          task.status === "done"
+            ? "border-green-300 text-green-700 bg-green-100"
+            : "border-muted text-muted-foreground bg-background"
+        }`}
+      >
+        {task.role}
+      </Badge>
+    </div>
+  </CardContent>
+</Card>
+
                 ))}
               </div>
             </div>
