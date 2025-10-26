@@ -95,11 +95,42 @@ export default function FileUpload({
     }
   };
 
-  return (
-    <div className="file-upload-component">
-      <input type="file" onChange={handleFileChange} />
-      <button onClick={handleUpload}>Upload File</button>
-      {message && <p>{message}</p>}
+ return (
+    <div className="max-w-md mx-auto p-4 bg-white shadow-md rounded-lg">
+      <h2 className="text-lg font-semibold mb-3">Upload Project File</h2>
+
+      <div className="mb-3">
+        <input
+          type="file"
+          onChange={handleFileChange}
+          className="block w-full text-sm text-gray-500
+                     file:mr-4 file:py-2 file:px-4
+                     file:rounded-full file:border-0
+                     file:text-sm file:font-semibold
+                     file:bg-blue-50 file:text-blue-700
+                     hover:file:bg-blue-100"
+        />
+        {/* {file && (
+          <p className="mt-2 text-gray-700 text-sm">Selected file: {file.name}</p>
+        )} */}
+      </div>
+
+      <button
+        onClick={handleUpload}
+        disabled={!file || !projectName || !description || !progress || !teamSize}
+        className={`w-full py-2 px-4 rounded-lg font-semibold text-white ${
+          file 
+            ? "bg-blue-600 hover:bg-blue-700"
+            : "bg-gray-400 cursor-not-allowed"
+        }`}
+      >
+        {"Upload File"}
+      </button>
+
+      {message && (
+        <p className="mt-3 text-center text-sm text-gray-700">{message}</p>
+      )}
     </div>
   );
 }
+

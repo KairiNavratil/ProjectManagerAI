@@ -37,7 +37,8 @@ export const KanbanBoard = ({ id }: KanbanBoardProps) => {
   const fetchTasks = async () => {
     try {
       const res = await fetch(
-        "https://ybxymtsxfobgxnqskxok.supabase.co/functions/v1/getTasks?id=" + id,
+        "https://ybxymtsxfobgxnqskxok.supabase.co/functions/v1/getTasks?id=" +
+          id,
         {
           headers: {
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -123,39 +124,74 @@ export const KanbanBoard = ({ id }: KanbanBoardProps) => {
 
               <div className="space-y-3">
                 {column.tasks.map((task) => (
+                  // <Card
+                  //   key={task.id}
+                  //   className="cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
+                  // >
+                  //   <CardHeader className="pb-3">
+                  //     <CardTitle className="text-base">{task.title}</CardTitle>
+                  //   </CardHeader>
+                  //   <CardContent className="space-y-3">
+                  //     <div className="flex items-center justify-between">
+                  //       <Badge variant="outline" className="text-xs">
+                  //         {task.role}
+                  //       </Badge>
+                  //       {/* <Badge
+                  //         className={`text-xs ${
+                  //           priorityColors[
+                  //             task.priority as keyof typeof priorityColors
+                  //           ]
+                  //         }`}
+                  //       >
+                  //         {task.priority}
+                  //       </Badge> */}
+                  //     </div>
+                  //     {/* <div className="flex items-center space-x-2">
+                  //       <Avatar className="h-6 w-6">
+                  //         <AvatarImage src={task.assignee.avatar} />
+                  //         <AvatarFallback>
+                  //           {task.assignee.name[0]}
+                  //         </AvatarFallback>
+                  //       </Avatar>
+                  //       <span className="text-sm text-muted-foreground">
+                  //         {task.assignee.name}
+                  //       </span>
+                  //     </div> */}
+                  //   </CardContent>
+                  // </Card>
+
                   <Card
                     key={task.id}
-                    className="cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
+                      task.status === "done"
+                        ? "bg-green-50 border-green-200"
+                        : "bg-white border"
+                    }`}
                   >
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base">{task.title}</CardTitle>
+                      <CardTitle
+                        className={`text-base ${
+                          task.status === "done"
+                            ? "text-green-800"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {task.title}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">
-                          {task.role}
-                        </Badge>
-                        {/* <Badge
+                        <Badge
+                          variant="outline"
                           className={`text-xs ${
-                            priorityColors[
-                              task.priority as keyof typeof priorityColors
-                            ]
+                            task.status === "done"
+                              ? "border-green-300 text-green-700 bg-green-100"
+                              : "border-muted text-muted-foreground bg-background"
                           }`}
                         >
-                          {task.priority}
-                        </Badge> */}
+                          {task.role}
+                        </Badge>
                       </div>
-                      {/* <div className="flex items-center space-x-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={task.assignee.avatar} />
-                          <AvatarFallback>
-                            {task.assignee.name[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm text-muted-foreground">
-                          {task.assignee.name}
-                        </span>
-                      </div> */}
                     </CardContent>
                   </Card>
                 ))}
